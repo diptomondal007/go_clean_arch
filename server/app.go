@@ -2,9 +2,15 @@ package server
 
 import (
 	"context"
+	"github.com/diptomondal007/go_clean_arch/auth"
+	authhttp "github.com/diptomondal007/go_clean_arch/auth/delivery/http"
+	authmysql "github.com/diptomondal007/go_clean_arch/auth/repository/mysql"
+	authusecase "github.com/diptomondal007/go_clean_arch/auth/usecase"
 	"github.com/diptomondal007/go_clean_arch/config"
+	"github.com/diptomondal007/go_clean_arch/conn"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"os"
@@ -15,9 +21,11 @@ import (
 
 type App struct {
 	httpServer *http.Server
+	authUC     auth.UseCase
 }
 
 func NewApp(appCfg *config.App) *App {
+	app := new(App)
 	router := echo.New()
 
 	// middleware
@@ -26,15 +34,18 @@ func NewApp(appCfg *config.App) *App {
 		middleware.Recover(),
 	)
 
-	return &App{
-		httpServer: &http.Server{
-			Addr:         appCfg.Address,
-			Handler:      router,
-			ReadTimeout:  appCfg.ReadTimeout,
-			WriteTimeout: appCfg.WriteTimeout,
-			IdleTimeout:  appCfg.IdleTimeout,
-		},
+	db , _ := conn.GetDB()
+	authRepo := authmysql.NewUserRepository(db.DB, viper.GetString("app.auth_table"))
+	app.authUC = authusecase.NewAuthUseCase(authRepo, viper.GetString("auth.hash_salt"), []byte(viper.GetString("auth.signing_key")), viper.GetDuration("auth.token_ttl"))
+	authhttp.RegisterHTTPEndpoints(router, app.authUC)
+	app.httpServer = &http.Server{
+		Addr:         appCfg.Address,
+		Handler:      router,
+		ReadTimeout:  appCfg.ReadTimeout,
+		WriteTimeout: appCfg.WriteTimeout,
+		IdleTimeout:  appCfg.IdleTimeout,
 	}
+	return app
 }
 
 func (app *App) Run() error {

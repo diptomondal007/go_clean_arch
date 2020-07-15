@@ -5,6 +5,7 @@ app:
   write_timeout: 30
   idle_timeout: 30
   debug: true
+  auth_table: user
 
 database:
   host: 127.0.0.1
@@ -16,3 +17,8 @@ database:
   max_open_connections: 300
   max_connection_lifetime: 300
   debug: true
+
+auth:
+  hash_salt: f1nd1ngn3m0
+  signing_key: fkskkdkksdkkkd
+  token_ttl: 3600
