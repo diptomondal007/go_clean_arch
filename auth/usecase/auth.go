@@ -2,11 +2,10 @@ package usecase
 
 import (
 	"context"
-	"crypto/sha1"
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/diptomondal007/go_clean_arch/auth"
 	"github.com/diptomondal007/go_clean_arch/models"
+	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
@@ -17,26 +16,23 @@ type AuthClaims struct {
 
 type AuthUseCase struct {
 	userRepo        auth.Repository
-	hashSalt        string
 	signingKey      []byte
 	expiredDuration time.Duration
 }
 
-func NewAuthUseCase(repo auth.Repository, hashSalt string, signingKey []byte, tokenTTLSeconds time.Duration) auth.UseCase {
+func NewAuthUseCase(repo auth.Repository, signingKey []byte, tokenTTLSeconds time.Duration) auth.UseCase {
 	return &AuthUseCase{
 		userRepo:        repo,
-		hashSalt:        hashSalt,
 		signingKey:      signingKey,
 		expiredDuration: time.Second * tokenTTLSeconds,
 	}
 }
 
 func (a *AuthUseCase) SignUp(ctx context.Context, user *models.User) error {
-	pwd := sha1.New()
-	pwd.Write([]byte(user.Password))
-	pwd.Write([]byte(a.hashSalt))
+	passwordToByte := []byte(user.Password)
+	passwordHash, _:= bcrypt.GenerateFromPassword(passwordToByte, bcrypt.MinCost)
 
-	user.Password = fmt.Sprintf("%x", pwd.Sum(nil))
+	user.Password = string(passwordHash)
 	return a.userRepo.CreateUser(ctx, user)
 }
 

@@ -36,7 +36,7 @@ func NewApp(appCfg *config.App) *App {
 
 	db , _ := conn.GetDB()
 	authRepo := authmysql.NewUserRepository(db.DB, viper.GetString("app.auth_table"))
-	app.authUC = authusecase.NewAuthUseCase(authRepo, viper.GetString("auth.hash_salt"), []byte(viper.GetString("auth.signing_key")), viper.GetDuration("auth.token_ttl"))
+	app.authUC = authusecase.NewAuthUseCase(authRepo, []byte(viper.GetString("auth.signing_key")), viper.GetDuration("auth.token_ttl"))
 	authhttp.RegisterHTTPEndpoints(router, app.authUC)
 	app.httpServer = &http.Server{
 		Addr:         appCfg.Address,

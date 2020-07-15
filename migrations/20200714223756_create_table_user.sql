@@ -1,10 +1,9 @@
 -- +goose Up
 CREATE TABLE user (
-id int not null,
-username text,
+username varchar(255) not null,
 password text,
 created_at text,
-primary key (id)
+primary key (username)
 );
 
 -- +goose Down

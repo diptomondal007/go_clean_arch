@@ -19,6 +19,5 @@ database:
   debug: true
 
 auth:
-  hash_salt: f1nd1ngn3m0
   signing_key: fkskkdkksdkkkd
   token_ttl: 3600
