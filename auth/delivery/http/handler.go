@@ -17,21 +17,46 @@ type authInput struct {
 	Password string
 }
 
-func NewHandler(useCase auth.UseCase) *Handler{
+func NewHandler(useCase auth.UseCase) *Handler {
 	return &Handler{
-		usecase:useCase,
+		usecase: useCase,
 	}
 }
 
-func (h *Handler) SignIn(c echo.Context) error{
-	return c.JSON(http.StatusOK, `{
-message: sing up failed
-}`)
+func (h *Handler) SignIn(c echo.Context) error {
+	inp := new(authInput)
+	if err := c.Bind(&inp); err != nil {
+		c.JSON(http.StatusBadRequest, &Response{
+			Message: "inputs are not valid",
+		})
+	}
+
+	token, err := h.usecase.SignIn(c.Request().Context(), inp.Username, inp.Password)
+	if err != nil {
+		if err == auth.ErrUserNotFound {
+			return c.JSON(http.StatusUnauthorized, &Response{
+				Message: err.Error(),
+			})
+		}
+		if err == auth.ErrPasswordDoesntMatch {
+			return c.JSON(http.StatusUnauthorized, &Response{
+				Message: err.Error(),
+			})
+		}
+		return c.JSON(http.StatusInternalServerError, &Response{
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, &Response{
+		Message: "log in successful",
+		Data:    token,
+	})
 }
 
-func (h *Handler) SignUp(c echo.Context) error{
+func (h *Handler) SignUp(c echo.Context) error {
 	inp := new(authInput)
-	if err := c.Bind(inp); err != nil{
+	if err := c.Bind(inp); err != nil {
 		return c.JSON(http.StatusBadRequest, &Response{
 			Message: "sign up failed",
 		})
@@ -44,7 +69,7 @@ func (h *Handler) SignUp(c echo.Context) error{
 		CreatedAt: time.Now().Format(time.RFC850),
 	}
 
-	if err := h.usecase.SignUp(c.Request().Context(), user); err != nil{
+	if err := h.usecase.SignUp(c.Request().Context(), user); err != nil {
 		return c.JSON(http.StatusInternalServerError, &Response{
 			Message: "sign up failed",
 		})

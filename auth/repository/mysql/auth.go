@@ -25,6 +25,11 @@ func (a AuthRepository) CreateUser(ctx context.Context, user *models.User) error
 	return nil
 }
 
-func (a AuthRepository) GetUser(ctx context.Context, username, password string) (*models.User, error) {
-	panic("implement me")
+func (a AuthRepository) GetUser(ctx context.Context, username string) (*models.User, error) {
+	var user models.User
+	err := a.db.Find(&user, "username=?",username).Error
+	if err != nil{
+		return nil, err
+	}
+	return &user, nil
 }

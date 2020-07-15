@@ -37,7 +37,26 @@ func (a *AuthUseCase) SignUp(ctx context.Context, user *models.User) error {
 }
 
 func (a *AuthUseCase) SignIn(ctx context.Context, username, password string) (string, error) {
-	panic("implement me")
+	user, err := a.userRepo.GetUser(ctx, username)
+	if err != nil{
+		return "", auth.ErrUserNotFound
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil{
+		return "", auth.ErrPasswordDoesntMatch
+	}
+
+	token := jwt.New(jwt.SigningMethodHS256)
+	claims := token.Claims.(jwt.MapClaims)
+	claims["username"] = user.Username
+	claims["admin"] = true
+	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+	t, err := token.SignedString([]byte("secret"))
+	if err != nil {
+		return "", err
+	}
+	return t, nil
 }
 
 func (a *AuthUseCase) ParseToken(ctx context.Context, accessToken string) (*models.User, error) {
