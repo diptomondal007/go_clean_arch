@@ -24,13 +24,17 @@ func NewHandler(useCase auth.UseCase) *Handler{
 }
 
 func (h *Handler) SignIn(c echo.Context) error{
-	return c.JSON(http.StatusOK, `"message": "log in successful"`)
+	return c.JSON(http.StatusOK, `{
+message: sing up failed
+}`)
 }
 
 func (h *Handler) SignUp(c echo.Context) error{
 	inp := new(authInput)
 	if err := c.Bind(inp); err != nil{
-		return c.JSON(http.StatusBadRequest, `"message": "sing up failed"`)
+		return c.JSON(http.StatusBadRequest, &Response{
+			Message: "sign up failed",
+		})
 	}
 
 	var user *models.User
@@ -41,8 +45,12 @@ func (h *Handler) SignUp(c echo.Context) error{
 	}
 
 	if err := h.usecase.SignUp(c.Request().Context(), user); err != nil{
-		return c.JSON(http.StatusInternalServerError, `"message": "sing up failed"`)
+		return c.JSON(http.StatusInternalServerError, &Response{
+			Message: "sign up failed",
+		})
 	}
 
-	return c.JSON(http.StatusOK, `"message": "sing up successful"`)
+	return c.JSON(http.StatusOK, &Response{
+		Message: "sign up successful",
+	})
 }
